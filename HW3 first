@@ -1,0 +1,108 @@
+# some packages we will use
+require(quantmod)
+require(forecast)
+require(fBasics)
+require(CADFtest)
+require(urca)
+# install.packages("sandwich")
+require(sandwich)
+# install.packages("lmtest")
+require(lmtest)
+require(nlme)
+# install.packages("MTS")
+require(MTS)
+require(car)
+# install.packages("strucchange")
+require(strucchange)
+require(vars)
+# install.packages for seasonal adjustment
+install.packages("Ecdat")
+library(Ecdat)
+
+install.packages("seasonal")
+library(seasonal)
+
+require(xts)
+
+
+# Global price of Brent Crude
+getSymbols("POILBREUSDM",src="FRED")
+dim(POILBREUSDM)
+head(POILBREUSDM)
+tail(POILBREUSDM)
+plot(POILBREUSDM)
+chartSeries(POILBREUSDM,type=c("line"),theme="white",TA=NULL)
+
+Boil <- POILBREUSDM$POILBREUSDM
+plot(Boil)
+Boil <- na.omit(Boil)
+plot(Boil)
+
+# Adjust seasonally the BOIL
+
+ts_oil = ts(Boil, frequency = 12, start = 1999)
+ts_oil = ts(ts_oil [c(0:228)],freq=12,start=1999)
+decompose_oil = decompose(ts_oil, "multiplicative")
+adjust_oil = ts_oil / decompose_oil$seasonal
+plot(adjust_oil, lwd = 2)
+
+head(adjust_oil)
+tail(adjust_oil)
+
+
+# question 1
+
+dBoil = na.remove(diff(log(adjust_oil)))
+adf.test(Boil)
+adf.test(dBoil)
+
+# Global price of Natural gas, EU
+getSymbols("PNGASEUUSDM",src="FRED")
+dim(PNGASEUUSDM)
+head(PNGASEUUSDM)
+tail(PNGASEUUSDM)
+plot(PNGASEUUSDM)
+chartSeries(PNGASEUUSDM,type=c("line"),theme="white",TA=NULL)
+
+Bgas <-PNGASEUUSDM$PNGASEUUSDM
+plot(Bgas)
+Bgas <- na.omit(Bgas)
+plot(Bgas)
+
+# Adjust seasonally the BGAS
+
+ts_gas = ts(Bgas, frequency = 12, start = 1999)
+ts_gas = ts(ts_gas [c(0:228)],freq=12,start=1999)
+decompose_oil = decompose(ts_gas, "multiplicative")
+adjust_gas = ts_gas / decompose_oil$seasonal
+plot(adjust_gas, lwd = 2)
+
+head(adjust_gas)
+tail(adjust_gas)
+
+
+# question 1
+
+dBgas = na.remove(diff(log(adjust_gas)))
+adf.test(Bgas)
+adf.test(dBgas)
+
+cbind(adjust_gas,adjust_oil)
+
+
+getSymbols("TOT",from="1999-01-01",to="2017-12-31")
+dim(TOT) 
+head(TOT) 
+TOT <- TOT$TOT.Close
+plot(TOT)
+
+TOT <- apply.monthly(TOT, FUN=sum, na.rm=TRUE)
+dTOT = na.remove(diff(TOT))
+adf.test(TOT)
+adf.test(dTOT)
+
+head(TOT)
+tail(TOT)
+
+HW3 <-cbind(dTOT,dBgas,dBoil)
+plot(HW3)
